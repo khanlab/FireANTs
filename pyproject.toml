@@ -8,7 +8,7 @@ authors = [
 ]
 description = "FireANTs: Adaptive Riemannian Optimization for Multi-Scale Diffeomorphic Registration"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 dependencies = [
     "torch>=2.3.0",
     "SimpleITK==2.2.1", 
@@ -16,7 +16,7 @@ dependencies = [
     "numpy", "scipy", "scikit-image", "matplotlib",
     "typing", "tqdm", "pandas", "hydra-core",
     "pytest"
-]
+, "zarrnii>=0.15.4a1,<0.16"]
 
 [build-system]
 requires = ["hatchling>=1.21.0"]
@@ -29,7 +29,7 @@ exclude = ["docker*", "notepad*", "fused_ops*", "tutorials*"]
 packages = ["fireants"]
 
 [tool.pixi.workspace]
-channels = ["conda-forge"]
+channels = ["conda-forge", "bioconda"]
 platforms = ["linux-64"]
 
 [tool.pixi.pypi-dependencies]
@@ -38,10 +38,17 @@ fireants = { path = ".", editable = true }
 [tool.pixi.tasks]
 
 [tool.pixi.dependencies]
-python = "3.9.*"
+python = "3.11.*"
 cuda-nvcc = "12.2.*"
 libcusparse-dev = ">=12.1.2.141,<13"
 libcublas-dev = ">=12.2.5.6,<13"
 libcusolver-dev = ">=11.5.2.141,<12"
 pip = ">=25.2,<26"
 setuptools = ">=80.9.0,<81"
+snakemake = ">=9.5.1,<10"
+snakebids = ">=0.14.0,<0.15"
+zarr = ">=3.0.8,<4"
+dask = ">=2025.5.1,<2026"
+conda = ">=25.5.0,<26"
+
+
