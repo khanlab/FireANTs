@@ -34,3 +34,7 @@ benchmarks/
 tests/notebooks
 tests/test_results/
 **/*.zip
+
+# pixi environments
+.pixi
+*.egg-info

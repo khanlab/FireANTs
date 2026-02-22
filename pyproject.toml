@@ -27,3 +27,21 @@ exclude = ["docker*", "notepad*", "fused_ops*", "tutorials*"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["fireants"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+fireants = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+python = "3.9.*"
+cuda-nvcc = "12.2.*"
+libcusparse-dev = ">=12.1.2.141,<13"
+libcublas-dev = ">=12.2.5.6,<13"
+libcusolver-dev = ">=11.5.2.141,<12"
+pip = ">=25.2,<26"
+setuptools = ">=80.9.0,<81"
