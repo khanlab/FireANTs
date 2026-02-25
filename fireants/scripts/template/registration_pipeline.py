@@ -85,6 +85,9 @@ def register_batch(
             # save the transformed images (todo: change this to some other save format)
             if is_last_epoch and args.save_moved_images:
                 FakeBatchedImages(moved_images, init_template_batch).write_image(moved_file_names)
+            if is_last_epoch and args.save_transforms:
+                rigid_filenames = [os.path.join(args.save_dir, f"{identifier}_rigid.mat") for identifier in identifiers]
+                rigid.save_as_ants_transforms(rigid_filenames)
             # save shape
             avg_warp = add_shape(avg_warp, rigid)
         del rigid
@@ -103,6 +106,9 @@ def register_batch(
                 moved_images = affine.evaluate(init_template_batch, moving_images_batch)
             if is_last_epoch and args.save_moved_images:
                 FakeBatchedImages(moved_images, init_template_batch).write_image(args.save_dir)
+            if is_last_epoch and args.save_transforms:
+                affine_filenames = [os.path.join(args.save_dir, f"{identifier}_affine.mat") for identifier in identifiers]
+                affine.save_as_ants_transforms(affine_filenames)
             # save shape
             avg_warp = add_shape(avg_warp, affine)
         del affine
@@ -123,6 +129,12 @@ def register_batch(
             moved_images = deform.evaluate(init_template_batch, moving_images_batch)
         if is_last_epoch and args.save_moved_images:
             FakeBatchedImages(moved_images, init_template_batch).write_image(moved_file_names)
+        if is_last_epoch and args.save_transforms:
+            fwd_filenames = [os.path.join(args.save_dir, f"{identifier}_fwd_warp.nii.gz") for identifier in identifiers]
+            deform.save_as_ants_transforms(fwd_filenames, save_inverse=False)
+            if args.deform_algo == 'greedy':
+                inv_filenames = [os.path.join(args.save_dir, f"{identifier}_inv_warp.nii.gz") for identifier in identifiers]
+                deform.save_as_ants_transforms(inv_filenames, save_inverse=True)
         # save shape
         avg_warp = add_shape(avg_warp, deform)
         del deform
