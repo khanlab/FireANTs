@@ -31,6 +31,7 @@ save_dir: ./saved_templates/fmost_25um
 save_every: 2               # number of epochs to save the template (last epoch will always be saved)
 save_init_template: true  
 save_moved_images: false    # set to true if you want to save the moved images at last step (used for template creation)
+save_transforms: false      # set to true to save the transforms between each subject and the final template
 # no num_subjects: will be the same as the number of subjects used for creation
 save_additional:
   image_file: []

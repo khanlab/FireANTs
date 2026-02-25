@@ -75,6 +75,7 @@ def main(args):
     rank = parallel_state.get_data_parallel_rank()
 
     try_add_to_config(args, 'orientation', None)
+    try_add_to_config(args, 'save_transforms', False)
 
     if rank == 0:
         logger.info(f"Working directory: {os.getcwd()}")
