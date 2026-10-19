@@ -196,13 +196,19 @@ def main(args):
 
         # save here
         if ((epoch % args.save_every == 0) or is_last_epoch) and rank == 0:
-            img_array = init_template.array.cpu().numpy()[0, 0]
-            if args.save_as_uint8:
-                img_array = (normalize(img_array) * 255.0).astype(np.uint8)
-            itk_img = sitk.GetImageFromArray(img_array)
-            itk_img.CopyInformation(init_template.itk_image)
-            sitk.WriteImage(itk_img, f"{args.save_dir}/template_{epoch}.nii.gz")
-            logger.info(f"Saved template {epoch} to {args.save_dir}/template_{epoch}.nii.gz")
+            # multivariate templates are written one file per channel (template_{epoch}_ch-{c}),
+            # single-channel templates keep the original template_{epoch} name
+            num_channels = init_template.array.shape[1]
+            for c in range(num_channels):
+                img_array = init_template.array.cpu().numpy()[0, c]
+                if args.save_as_uint8:
+                    img_array = (normalize(img_array) * 255.0).astype(np.uint8)
+                itk_img = sitk.GetImageFromArray(img_array)
+                itk_img.CopyInformation(init_template.itk_image)
+                suffix = f"_ch-{c}" if num_channels > 1 else ""
+                out_file = f"{args.save_dir}/template_{epoch}{suffix}.nii.gz"
+                sitk.WriteImage(itk_img, out_file)
+                logger.info(f"Saved template {epoch} to {out_file}")
 
     # cleanup
     parallel_state.cleanup_parallel_state()
