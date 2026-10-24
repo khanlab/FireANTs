@@ -27,3 +27,46 @@ exclude = ["docker*", "notepad*", "fused_ops*", "tutorials*"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["fireants"]
+
+# ----------------------------------------------------------------------
+# Conda package, built with pixi-build and published to akhanf/khanlab on
+# release (.github/workflows/push_conda.yml). The run dependencies are listed
+# here rather than converted from [project.dependencies], to relax the
+# SimpleITK pin and leave out typing (stdlib) and pytest (tests only).
+# ----------------------------------------------------------------------
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+preview = ["pixi-build"]
+
+[tool.pixi.package]
+name = "fireants"
+# set from the release tag by the publish workflow
+version = "0.0.0.dev0"
+publish = true
+
+[tool.pixi.package.build.backend]
+name = "pixi-build-python"
+version = "*"
+channels = ["conda-forge"]
+
+[tool.pixi.package.build.config]
+ignore-pyproject-manifest = true
+
+[tool.pixi.package.host-dependencies]
+hatchling = ">=1.21.0"
+
+[tool.pixi.package.run-dependencies]
+python = ">=3.9"
+pytorch = ">=2.3.0"
+# the PyPI SimpleITK==2.2.1 pin is not needed, and conflicts with newer packages
+simpleitk = ">=2.2.1"
+nibabel = "*"
+numpy = "*"
+scipy = "*"
+scikit-image = "*"
+matplotlib-base = "*"
+tqdm = "*"
+pandas = "*"
+hydra-core = "*"
