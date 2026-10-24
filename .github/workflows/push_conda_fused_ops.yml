@@ -57,6 +57,8 @@ jobs:
       - name: Build
         uses: prefix-dev/rattler-build-action@v0.2.34
         with:
+          # the action's default rattler-build is too old for --variant
+          rattler-build-version: v0.77.0
           recipe-path: fused_ops/recipe/recipe.yaml
           upload-artifact: false
           build-args: >-
