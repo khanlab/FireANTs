@@ -1,0 +1,89 @@
+# Conda package for the FireANTs fused CUDA ops, built with rattler-build and
+# published to akhanf/khanlab (.github/workflows/push_conda_fused_ops.yml).
+#
+# The extension links against libtorch's C++ API, so each build only works with
+# the pytorch minor version it was built against: variants.yaml lists the
+# pytorch (and python) versions to build for.
+context:
+  # set from the release tag by the publish workflow
+  version: "1.2.0"
+
+package:
+  name: fireants-fused-ops
+  version: ${{ version }}
+
+source:
+  path: ../..
+  filter:
+    include:
+      - fused_ops/**
+      - LICENSE
+    exclude:
+      - fused_ops/build/**
+      - "**/*.egg-info/**"
+
+build:
+  number: 0
+  script:
+    env:
+      # compute capabilities to build kernels for; +PTX lets newer GPUs JIT
+      TORCH_CUDA_ARCH_LIST: "7.0;7.5;8.0;8.6;8.9;9.0+PTX"
+    content: |
+      export MAX_JOBS=${CPU_COUNT}
+      export CUDA_HOME=${BUILD_PREFIX}
+      # the CUDA headers and libraries are in the host prefix
+      export CPATH=${PREFIX}/targets/x86_64-linux/include:${PREFIX}/include${CPATH:+:${CPATH}}
+      cd fused_ops
+      ${PYTHON} -m pip install . --no-deps --no-build-isolation -vv
+
+requirements:
+  build:
+    - ${{ compiler('c') }}
+    - ${{ compiler('cxx') }}
+    - ${{ compiler('cuda') }}
+    - ${{ stdlib('c') }}
+    - ninja
+  host:
+    - python
+    - pip
+    - setuptools
+    - wheel
+    - pybind11
+    - pytorch ${{ pytorch }}.* cuda*
+    - cuda-version ${{ cuda_compiler_version }}.*
+    # headers pulled in by torch/extension.h and ATen/cuda
+    - cuda-cudart-dev
+    - libcublas-dev
+    - libcusparse-dev
+    - libcusolver-dev
+    - libcurand-dev
+    - cuda-nvtx-dev
+    - cuda-cccl
+  run:
+    - python
+    - ${{ pin_compatible('pytorch', upper_bound='x.x') }}
+    - pytorch * cuda*
+    - __cuda
+  ignore_run_exports:
+    from_package:
+      # only needed at build time for headers; pytorch brings the runtime libs
+      - libcublas-dev
+      - libcusparse-dev
+      - libcusolver-dev
+      - libcurand-dev
+      - cuda-nvtx-dev
+
+tests:
+  # the build machine has no GPU, so only check that the extension loads
+  - script:
+      - python -c "import torch, fireants_fused_ops; print(fireants_fused_ops.__file__)"
+  - package_contents:
+      files:
+        - lib/python*/site-packages/fireants_fused_ops*.so
+
+about:
+  homepage: https://github.com/rohitrango/FireANTs
+  repository: https://github.com/khanlab/FireANTs
+  summary: Fused CUDA operations for FireANTs
+  license: LicenseRef-FireANTs
+  license_file: LICENSE
