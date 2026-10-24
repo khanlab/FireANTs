@@ -1,0 +1,87 @@
+name: Publish fused ops Conda package
+
+# Builds fireants-fused-ops (fused_ops/recipe) for every python x pytorch
+# variant in fused_ops/recipe/variants.yaml and uploads to akhanf/khanlab.
+# Uses rattler-build directly rather than the khanlab pixi publish action,
+# which expects a single package (and a single .conda) from the root manifest.
+
+on:
+  release:
+    types: [published]
+
+  # build the package (without uploading) when the fused ops or packaging change
+  pull_request:
+    paths:
+      - fused_ops/**
+      - .github/workflows/push_conda_fused_ops.yml
+
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Actually upload package"
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  publish:
+    # fused ops releases are tagged fused-ops-v<version>, e.g. fused-ops-v1.2.0
+    if: >-
+      github.event_name != 'release'
+      || startsWith(github.event.release.tag_name, 'fused-ops-v')
+    runs-on: ubuntu-latest
+    # one job per python version: compiling the kernels for every GPU arch is
+    # slow on a hosted runner, so the variants build in parallel
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Free disk space
+        # the CUDA toolkit and pytorch host environments need several GB per variant
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+
+      - name: Set version from release tag
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="${TAG#fused-ops-v}"
+          sed -i "s/^  version: \".*\"/  version: \"${version}\"/" fused_ops/recipe/recipe.yaml
+          grep -n "version:" fused_ops/recipe/recipe.yaml
+
+      - name: Build
+        uses: prefix-dev/rattler-build-action@v0.2.34
+        with:
+          recipe-path: fused_ops/recipe/recipe.yaml
+          upload-artifact: false
+          build-args: >-
+            --variant-config fused_ops/recipe/variants.yaml
+            --variant python=${{ matrix.python }}
+            -c conda-forge
+            --output-dir output
+
+      - name: Setup Pixi
+        if: >-
+          github.event_name == 'release'
+          || inputs.upload == true
+        uses: prefix-dev/setup-pixi@v0.10.2
+        with:
+          run-install: false
+
+      - name: Upload
+        if: >-
+          github.event_name == 'release'
+          || inputs.upload == true
+        env:
+          PREFIX_API_KEY: ${{ secrets.PREFIX_API_KEY }}
+        run: |
+          set -euo pipefail
+          find output -name '*.conda' | while read -r pkg; do
+            echo "Uploading: ${pkg}"
+            pixi upload prefix --channel akhanf/khanlab "${pkg}"
+          done
